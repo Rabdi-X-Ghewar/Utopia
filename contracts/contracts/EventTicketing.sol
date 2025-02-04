@@ -3,15 +3,25 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./Events/EventManagement.sol";
 import "./Resell/Marketplace.sol";
 import "./Tickets/Ticketmanagement.sol";
 
 contract EventTicketing is ERC1155, Ownable {
+    // Struct to store additional ticket metadata
+    struct TicketMetadata {
+        string imageHash;  // IPFS hash of the uploaded image
+        string metadataUri;  // URI for additional ticket metadata
+        uint256 createdAt;  // Timestamp of ticket creation
+    }
 
     EventManagement public eventManagement;
     TicketManagement public ticketManagement;
     Marketplace public marketplace;
+
+    // Mapping to store ticket metadata
+    mapping(uint256 => TicketMetadata) public ticketMetadata;
 
     constructor(string memory uri, address initialOwner) ERC1155(uri) Ownable(initialOwner) {
         eventManagement = new EventManagement();
@@ -19,24 +29,48 @@ contract EventTicketing is ERC1155, Ownable {
         marketplace = new Marketplace(address(this));
     }
 
+    // Existing functions remain the same
     function createEvent(string memory name, uint256 ticketSupply, uint256 ticketPrice) public onlyOwner {
         uint256 eventId = eventManagement.createEvent(name, ticketSupply, ticketPrice);
         _mint(msg.sender, eventId, 1, "");
     }
 
-    function mintTickets(uint256 eventId, uint256 amount) public payable {
+    // Modified mintTickets function to support image upload
+    function mintTickets(uint256 eventId, uint256 amount, string memory imageHash, string memory metadataUri) 
+        public 
+        payable 
+    {
         require(eventManagement.isEventActive(eventId), "Event is not active");
         require(amount > 0 && amount <= eventManagement.getTicketSupply(eventId), "Invalid amount");
         require(msg.value >= eventManagement.getTicketPrice(eventId) * amount, "Insufficient payment");
 
         uint256[] memory ticketIds = ticketManagement.mintTickets(eventId, amount);
+        
         for (uint256 i = 0; i < ticketIds.length; i++) {
+            // Store metadata for each ticket
+            ticketMetadata[ticketIds[i]] = TicketMetadata({
+                imageHash: imageHash,
+                metadataUri: metadataUri,
+                createdAt: block.timestamp
+            });
+            
             _mint(msg.sender, ticketIds[i], 1, "");
         }
 
         eventManagement.updateTicketSupply(eventId, amount);
     }
 
+    // Override URI function to return dynamic metadata
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        TicketMetadata memory metadata = ticketMetadata[tokenId];
+        return string(abi.encodePacked(
+            metadata.metadataUri, 
+            "/", 
+            Strings.toString(tokenId)
+        ));
+    }
+
+    // Existing functions from the previous contract
     function resellTicket(uint256 ticketId, uint256 price) public {
         require(balanceOf(msg.sender, ticketId) > 0, "You don't own this ticket");
         marketplace.listTicket(ticketId, price);
@@ -58,5 +92,17 @@ contract EventTicketing is ERC1155, Ownable {
     function getTicketEvent(uint256 ticketId) public view returns (uint256) {
         return ticketManagement.getTicketEvent(ticketId);
     }
-}
 
+    // Additional function for transferring NFT
+    function transferNFTToCoinbaseWallet(
+        address to, 
+        uint256 ticketId, 
+        uint256 amount
+    ) public {
+        // Verify ownership
+        require(balanceOf(msg.sender, ticketId) >= amount, "Insufficient balance");
+        
+        // Perform transfer
+        safeTransferFrom(msg.sender, to, ticketId, amount, "");
+    }
+}
