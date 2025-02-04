@@ -17,7 +17,7 @@ export function MainNav() {
       {items.map((item) => (
         <Link
           key={item.title}
-          href={item.href}
+          to={item.href}
           className={cn(
             "text-sm font-medium transition-colors hover:text-primary",
             item.title === "All" ? "text-primary" : "text-muted-foreground",
