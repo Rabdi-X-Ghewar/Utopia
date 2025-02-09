@@ -18,6 +18,23 @@ import { PromptTemplate } from "@langchain/core/prompts";
 import { HfInference } from "@huggingface/inference";
 import { uploadToIPFS } from "../utils/ipfs"; // Import the uploadToIPFS function
 import { useUser } from "@clerk/clerk-react";
+import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
+import {
+  InputTransactionData,
+  useWallet,
+  WalletCore,
+} from "@aptos-labs/wallet-adapter-react";
+import type {
+  InputSubmitTransactionData,
+  PendingTransactionResponse,
+} from "@aptos-labs/wallet-adapter-core";
+import { v4 as uuidv4 } from 'uuid';
+uuidv4();
+
+
+export const moduleAddress = "903a8c9e37c744674108ea208c81e60ff09d78c612ffa9df78396e99634f8204";
+
+
 
 export interface Event {
   id: string;
@@ -26,7 +43,7 @@ export interface Event {
   date: Date;
   location: string;
   price: number;
-  imageUrl: BinaryData;
+  imageUrl: string;
   category: string;
   tickets: { available: number; total: number };
   organizer: { name: string; contact: string };
@@ -55,6 +72,8 @@ interface AIGeneratedEventDetails {
   imagePrompt?: string;
 }
 
+const aptosConfig = new AptosConfig({ network: Network.TESTNET });
+const aptos = new Aptos(aptosConfig);
 const apiKey = "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"; // Add your API key here
 const client = new HfInference(apiKey);
 const eventPromptTemplate = new PromptTemplate({
@@ -70,9 +89,11 @@ const eventPromptTemplate = new PromptTemplate({
     Event Details: {details}
     Output only the JSON object without additional text.`,
 });
+// const { account, signAndSubmitTransaction } = useWallet();
+
 
 export default function CreateEvent() {
-  const {user} = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -98,8 +119,8 @@ export default function CreateEvent() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        organizerName: `${user.firstName || ''} ${user.lastName || ''}`,
-        organizerContact: user.emailAddresses?.[0]?.emailAddress || '',
+        organizerName: `${user.firstName || ""} ${user.lastName || ""}`,
+        organizerContact: user.emailAddresses?.[0]?.emailAddress || "",
       }));
     }
   }, [user]);
@@ -109,6 +130,8 @@ export default function CreateEvent() {
       setFormData(JSON.parse(savedData));
     }
   }, []);
+
+  
 
   const saveDraft = () => {
     localStorage.setItem("eventDraft", JSON.stringify(formData));
@@ -128,7 +151,7 @@ export default function CreateEvent() {
 
       // Modify IPFS upload to handle potential void return
       try {
-        const uploadResult:any = await uploadToIPFS(file);
+        const uploadResult: any = await uploadToIPFS(file);
 
         // Check if uploadResult is a string (hash)
         if (typeof uploadResult === "string" && uploadResult.trim() !== "") {
@@ -269,52 +292,60 @@ export default function CreateEvent() {
       setFormData((prev) => ({ ...prev, totalTickets: value }));
     }
   };
+  
+  const { account, signAndSubmitTransaction } = useWallet();
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+  
     if (!eventDate) {
       toast.error("Please select an event date");
       return;
     }
-
+  
     try {
       setIsSubmitting(true);
-      console.log(JSON.stringify(formData));
-      const formDataToSend = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "image" && value) {
-          formDataToSend.append("image", value);
-        } else if (value) {
-          formDataToSend.append(key, value.toString());
-          console.log(JSON.stringify(formDataToSend));
-        }
-      });
-
-      formDataToSend.append("date", eventDate.toISOString());
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-      await createEvent(formDataToSend);
-      const response = await fetch("http://localhost:4001/upsert", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+  
+      // Prepare eventDetails directly from formData and other inputs
+      const eventDetails = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        date: eventDate.toISOString(), // Use the selected event date
+        location: formData.location,
+        category: formData.category,
+        totalTickets: formData.totalTickets,
+        organizerName: formData.organizerName,
+        organizerContact: formData.organizerContact,
+        image: ipfsHash || null, // Use the IPFS hash if available
+      };
+  
+      console.log("Event Details:", eventDetails);
+  
+      // Prepare Aptos transaction
+      const transaction: InputTransactionData = {
+        data: {
+          function: `${moduleAddress}::myutopia::SoonamiEvent::create_event`, // Replace with your module address and function path
+          functionArguments: [
+            
+            eventDetails.title, 
+            eventDetails.description,
+            eventDetails.price, 
+            
+          ],
         },
-        body: JSON.stringify(formDataToSend), // Send the event data
-      });
-      const result = await response.json();
-      console.log(result);
-
-      // Clear local storage after successful submission
-      localStorage.removeItem("eventDraft");
+      };
+  
+      // Sign and submit the transaction
+      const txResponse = await signAndSubmitTransaction(transaction);
+      await aptos.waitForTransaction({ transactionHash: txResponse.hash });
+  
+      // Success feedback
       toast.success("Event created successfully!");
+      localStorage.removeItem("eventDraft");
       navigate("/events");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create event"
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to create event");
     } finally {
       setIsSubmitting(false);
     }
