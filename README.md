@@ -4,7 +4,6 @@ Utopia is a decentralized event management and ticketing platform that harnesses
 ain and AI to offer a seamless experience for event organizers and attendees. 
 [Video Link](https://youtu.be/U33PISp47U0)
 
-<img width="1000" alt="biy" src="https://github.com/user-attachments/assets/223efda2-5135-46b8-bbd4-c4a3f81644c2" />
 ![Screenshot 2025-02-10 024011](https://github.com/user-attachments/assets/487a6a3b-1e9f-42af-b520-dade043b3f3c)
 
 ## 🚀 Features
