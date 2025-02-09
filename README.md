@@ -1,4 +1,4 @@
-# 🏆 Utopia - Blockchain Event Ticketing Platform
+# 🏆 Utopia - Ai and Blockchain Event Ticketing Platform
 
 Utopia is a decentralized event management and ticketing platform that harnesses the power of blockchain and AI to offer a seamless experience for event organizers and attendees. 
 [Video Link](https://youtu.be/U33PISp47U0)
