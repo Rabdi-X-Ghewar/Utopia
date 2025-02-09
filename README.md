@@ -3,6 +3,10 @@
 Utopia is a decentralized event management and ticketing platform that harnesses the power of blockchain and AI to offer a seamless experience for event organizers and attendees. 
 [Video Link](https://youtu.be/U33PISp47U0)
 
+![image](https://github.com/user-attachments/assets/8b417aeb-fe10-4ebd-9f41-3790249f85cd)
+
+![Screenshot 2025-02-10 024011](https://github.com/user-attachments/assets/487a6a3b-1e9f-42af-b520-dade043b3f3c)
+
 ## 🚀 Features
 - **NFT Ticketing:** Events and tickets are minted as **NFTs** on the **Base network**, preventing ticket duplication.
 - **AI Event Recommendations:** Custom AI models analyze event data and suggest events based on user preferences.
