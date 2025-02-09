@@ -25,6 +25,8 @@ Utopia is a decentralized event management and ticketing platform that harnesses
 - **AI Models:** Langchain, Hyperbolic on eigenlayer
 - **Wallets:** MetaMask, Petra Wallet
 
+- [Aptos Contracts](https://explorer.aptoslabs.com/account/0x903a8c9e37c744674108ea208c81e60ff09d78c612ffa9df78396e99634f8204/modules/run/AptosEvent5/create_event?network=testnet)
+
 ## 🛠️ Setup & Deployment
 1. Clone the repository:
    ```sh
