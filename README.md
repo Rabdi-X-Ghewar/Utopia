@@ -13,6 +13,10 @@ ain and AI to offer a seamless experience for event organizers and attendees.
 - **Secure Ticket Resale:** Secondary market transactions occur within Utopia, preventing fraud.
 - **Wallet Integration:** Connect **MetaMask, Coinbase Wallet**, and other Web3 wallets.
 - **Low Gas Fees:** Leveraging Base Layer-2 for cost-effective transactions.
+- ## 📦 HYPERBOLIC AI Based on Eigenlayer Endpoint
+
+- We use the Hyperbolic AI.
+- Our backend bot is being powered by Hyperbolic which using langchain open ai function to call Hyperbolic Model AVS based on Eigenlayer and generated out text data at the backend server file or Utopia.
 
 ## 🎟️ How It Works
 1. **Event Creation:** Organizers create an event, which is minted as an NFT.
